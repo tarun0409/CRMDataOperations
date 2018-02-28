@@ -34,6 +34,10 @@ public class RestApiResponse {
 	public void logResponse()
 	{
 		JSONObject resp = getResponse();
+		if(resp==null)
+		{
+			return;
+		}
 		ArrayList<String> successIds = new ArrayList<String>();
 		if(resp.has("data"))
 		{
@@ -78,7 +82,7 @@ public class RestApiResponse {
 		}
 	}
 	
-	public void handleGetResponse(String action, String module) throws Exception
+	public void handleGetResponse(String action,String module) throws Exception
 	{
 		ArrayList<String> ids = new ArrayList<String>();
 		JSONObject resp = getResponse();

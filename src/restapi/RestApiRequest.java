@@ -11,6 +11,7 @@ import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.json.JSONObject;
 
+import security.Authorization;
 import transput.Properties;
 
 public class RestApiRequest {
@@ -29,22 +30,14 @@ public class RestApiRequest {
 	public RestApiRequest(String httpMethod, String apiUrl) throws Exception
 	{
 		JSONObject properties = Properties.getProperties();
-		if(properties.has("oauth"))
-		{
-			boolean oauth = properties.getBoolean("oauth");
-			this.authHeader = oauth ? "Zoho-oauthtoken " : "Zoho-authtoken ";
-			if(!oauth && properties.has("authtoken"))
-			{
-				this.authtoken = properties.getString("authtoken");
-			}
-		}
+		this.authHeader = Authorization.getAuthHeaderInfo();
+		this.authtoken = Authorization.getAuthToken();
 		this.httpMethod = httpMethod;
 		if(properties.has("domain"))
 		{
 			String domainName = properties.getString("domain");
 			this.url = new URIBuilder(domainName+"/crm/v2/"+apiUrl);
 		}
-		
 	}
 	public void addParam(String key, String value)
 	{
@@ -54,9 +47,13 @@ public class RestApiRequest {
 //	{
 //		this.requestBody = requestBody;
 //	}
-	private JSONObject getResponseInJsonObject(HttpResponse response)
+	public static JSONObject getResponseInJsonObject(HttpResponse response)
 	{
 		JSONObject resp = null;
+		if(response.getStatusLine().getStatusCode()==204)
+		{
+			return null;
+		}
 		try
 		{
 			BufferedReader rd = new BufferedReader(
@@ -74,7 +71,7 @@ public class RestApiRequest {
 		}
 		return resp;
 	}
-	private void executeGet()
+	private RestApiResponse executeGet()
 	{
 		RestApiResponse response = new RestApiResponse();
 		response.setHttpMethod(GET);
@@ -83,55 +80,54 @@ public class RestApiRequest {
 		{
 			HttpGet request = new HttpGet(url.build());
 			request.addHeader("Authorization", authHeader+authtoken);
+			System.out.println("\n\nEXECUTING GET URL: "+url.toString());
 			HttpResponse httpResp = client.execute(request);
 			int statusCode = httpResp.getStatusLine().getStatusCode();
 			response.setStatusCode(statusCode);
 			response.setResponse(getResponseInJsonObject(httpResp));
-			response.logResponse();
+			//response.logResponse();
 			
 		}
 		catch(Exception e)
 		{
 			e.printStackTrace();
 		}
+		return response;
+		
 	}
-	private void executeDelete()
+	private RestApiResponse executeDelete()
 	{
-		new Thread(new Runnable() {
-
-			@Override
-			public void run() {
-				RestApiResponse response = new RestApiResponse();
-				response.setHttpMethod(DELETE);
-				HttpClient client = HttpClientBuilder.create().build();
-				try
-				{
-					HttpDelete request = new HttpDelete(url.build());
-					request.addHeader("Authorization", authHeader+authtoken);
-					HttpResponse httpResp = client.execute(request);
-					int statusCode = httpResp.getStatusLine().getStatusCode();
-					response.setStatusCode(statusCode);
-					response.setResponse(getResponseInJsonObject(httpResp));
-				}
-				catch(Exception ce)
-				{
-					ce.printStackTrace();
-				}
-				response.logResponse();
-			}
-			
-		}).start();
+		RestApiResponse response = new RestApiResponse();
+		response.setHttpMethod(DELETE);
+		HttpClient client = HttpClientBuilder.create().build();
+		try
+		{
+			HttpDelete request = new HttpDelete(url.build());
+			request.addHeader("Authorization", authHeader+authtoken);
+			System.out.println("\n\nEXECUTING DELETE URL: "+url.toString());
+			HttpResponse httpResp = client.execute(request);
+			int statusCode = httpResp.getStatusLine().getStatusCode();
+			response.setStatusCode(statusCode);
+			response.setResponse(getResponseInJsonObject(httpResp));
+			response.logResponse();
+		}
+		catch(Exception ce)
+		{
+			ce.printStackTrace();
+		}
+		return response;
 	}
-	public void executeRequest()
+	public RestApiResponse executeRequest()
 	{
 		if(httpMethod.equals(DELETE))
 		{
-			executeDelete();
+			return executeDelete();
 		}
 		if(httpMethod.equals(GET))
 		{
-			executeGet();
+			return executeGet();
 		}
+		return null;
 	}
 
 }
