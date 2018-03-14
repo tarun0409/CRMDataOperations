@@ -80,6 +80,7 @@ public class RestApiRequest {
 		{
 			HttpGet request = new HttpGet(url.build());
 			request.addHeader("Authorization", authHeader+authtoken);
+			request.addHeader("X-ZOHO-SERVICE","crmautomation");
 			System.out.println("\n\nEXECUTING GET URL: "+url.toString());
 			HttpResponse httpResp = client.execute(request);
 			int statusCode = httpResp.getStatusLine().getStatusCode();

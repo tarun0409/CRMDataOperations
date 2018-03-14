@@ -12,16 +12,17 @@ public class Properties {
 		{
 			return properties;
 		}
-		String properties = FileTransput.readFullFile("src/data/config.properties");
+		String propertiesStr = FileTransput.readFullFile("src/data/config.properties");
 		JSONObject pJson = null;
 		try
 		{
-			pJson = new JSONObject(properties);
+			pJson = new JSONObject(propertiesStr);
 		}
 		catch(JSONException je)
 		{
 			je.printStackTrace();
 		}
+		properties = pJson;
 		return pJson;
 		
 	}
